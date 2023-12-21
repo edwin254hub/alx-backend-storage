@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
-""" Redis Module """
+"""
+Cache
+"""
 
-from functools import wraps
 import redis
 import requests
 from typing import Callable
+from functools import wraps
 
-redis_ = redis.Redis()
+rd = redis.Redis()
 
 
 def count_requests(method: Callable) -> Callable:
-    """ Decortator for counting """
+    """requests"""
+
     @wraps(method)
-    def wrapper(url):  # sourcery skip: use-named-expression
-        """ Wrapper for decorator """
-        redis_.incr(f"count:{url}")
-        cached_html = redis_.get(f"cached:{url}")
+    def wrapper(url):
+        """wrapper"""
+        rd.incr(f"count:{url}")
+        cached_html = rd.get(f"cached:{url}")
         if cached_html:
             return cached_html.decode('utf-8')
+
         html = method(url)
-        redis_.setex(f"cached:{url}", 10, html)
+        rd.setex(f"cached:{url}", 10, html)
         return html
 
     return wrapper
@@ -27,6 +31,6 @@ def count_requests(method: Callable) -> Callable:
 
 @count_requests
 def get_page(url: str) -> str:
-    """ Obtain the HTML content of a  URL """
+    """pages"""
     req = requests.get(url)
     return req.text
